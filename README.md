@@ -5,12 +5,6 @@ This is a fork of [vpv](https://github.com/kidanger/vpv) with OpenEXR support in
 
 Also, you can modify the cmakelists if you don't want to use the GDAL library, but if you want all the features of vpv, you need to install GDAL, OpenEXR and LIBRAW.
 
-In Mac M1 chip, you can install the dependencies using Homebrew:
-
-```sh
-brew install openexr gdal libraw
-```
-
 Image viewer designed for image processing experts.
 
 * supports many image formats (including tiff, png, jpeg)
@@ -46,7 +40,7 @@ sudo apt install g++ cmake libsdl2-dev libpng-dev libtiff-dev libjpeg-dev
 
 On MacOS
 ```sh
-brew install cmake sdl2 libpng libtiff libjpeg
+brew install cmake sdl2 libpng libtiff libjpeg openexr gdal libraw
 ```
 
 ```sh
