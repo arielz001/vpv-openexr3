@@ -1,5 +1,15 @@
-vpv
+vpv using OpenEXR3
 ===
+
+This is a fork of [vpv](https://github.com/kidanger/vpv) with OpenEXR support in MAC M1 chip. (OpenEXR3).
+
+Also, you can modify the cmakelists if you don't want to use the GDAL library, but if you want all the features of vpv, you need to install GDAL, OpenEXR and LIBRAW.
+
+In Mac M1 chip, you can install the dependencies using Homebrew:
+
+```sh
+brew install openexr gdal libraw
+```
 
 Image viewer designed for image processing experts.
 

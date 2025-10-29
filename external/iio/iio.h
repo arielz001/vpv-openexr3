@@ -213,6 +213,15 @@ void iio_save_image_uint8_matrix(char *f, unsigned char **x, int w, int h);
 // (w, h; 3 float) => tiff, pfm
 
 // convenience wrapper for free (to avoid need to inlcude stdlib.h)
-void iio_free(void*);
+// BIEN
+// convenience wrapper for free (to avoid need to include stdlib.h)
+void iio_free(void *);  // ← PUNTO Y COMA, no paréntesis con parámetro
 
-#endif//IIO_H
+#ifdef I_CAN_HAS_LIBEXR
+#include <stdio.h>  // para FILE
+struct iio_image;
+int read_whole_exr(struct iio_image *x, const char *filename);
+int read_beheaded_exr(struct iio_image *x, FILE *fin, char *header, int nheader);
+#endif
+
+#endif//IIO_H 

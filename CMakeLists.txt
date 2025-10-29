@@ -27,10 +27,10 @@ endif()
 ##
 #################
 
-option(USE_EXR "compile with OpenEXR support (for iio)" OFF)
+option(USE_EXR "compile with OpenEXR support (for iio)" ON)
 option(USE_OCTAVE "compile with octave support" OFF)
-option(USE_LIBRAW "compile with LibRAW support" OFF)
-option(USE_GDAL "compile with GDAL support" OFF)
+option(USE_LIBRAW "compile with LibRAW support" ON)
+option(USE_GDAL "compile with GDAL support" ON)
 option(USE_IIO "compile with IIO support" ON)
 option(USE_IIO_NPY "compile with IIO numpy support" ON)
 option(USE_PLAMBDA "compile with plambda support" ON)
@@ -127,27 +127,71 @@ endif()
 ##
 #################
 
+# if(USE_IIO)
+#     add_definitions(-DUSE_IIO)
+#     if(USE_IIO_NPY)
+#         add_definitions(-DUSE_IIO_NPY)
+#         add_library(iio STATIC external/iio/iio.c external/iio/npy.c)
+#     else()
+#         add_library(iio STATIC external/iio/iio.c)
+#     endif()
+#     include_directories(SYSTEM external/iio)
+
+#     if(USE_EXR)
+# 	    find_package(OpenEXR REQUIRED)
+# 	    add_definitions(-DI_CAN_HAS_LIBEXR) # for iio
+#             include_directories(SYSTEM ${OPENEXR_INCLUDE_PATHS})
+# 	    target_link_libraries(iio ${OPENEXR_LIBRARIES})
+#     endif()
+
+#     target_enable_ipo_if_supported(iio)
+
+#     set(LIBS ${LIBS} iio)
+# endif()
+#################
+##
+##  IIO
+##
+#################
+
 if(USE_IIO)
     add_definitions(-DUSE_IIO)
     if(USE_IIO_NPY)
         add_definitions(-DUSE_IIO_NPY)
-        add_library(iio STATIC external/iio/iio.c external/iio/npy.c)
+        add_library(iio STATIC external/iio/iio.c external/iio/npy.c external/iio/exr_wrapper.cpp)  # ← AGREGADO
     else()
-        add_library(iio STATIC external/iio/iio.c)
+        add_library(iio STATIC external/iio/iio.c external/iio/exr_wrapper.cpp)  # ← AGREGADO
     endif()
     include_directories(SYSTEM external/iio)
 
-    if(USE_EXR)
-	    find_package(OpenEXR REQUIRED)
-	    add_definitions(-DI_CAN_HAS_LIBEXR) # for iio
+        if(USE_EXR)
+            find_package(OpenEXR REQUIRED)
+            add_definitions(-DI_CAN_HAS_LIBEXR)
             include_directories(SYSTEM ${OPENEXR_INCLUDE_PATHS})
-	    target_link_libraries(iio ${OPENEXR_LIBRARIES})
-    endif()
-
+            target_link_libraries(iio ${OPENEXR_LIBRARIES})
+            
+            # Agregar esto para asegurar C++11
+            target_compile_features(iio PRIVATE cxx_std_11)
+        endif()
     target_enable_ipo_if_supported(iio)
 
     set(LIBS ${LIBS} iio)
 endif()
+
+set(LibRaw_INCLUDE_DIR "/opt/homebrew/include")
+set(LibRaw_LIBRARIES "/opt/homebrew/lib/libraw.dylib")
+
+set(OpenEXR_INCLUDE_DIR "/opt/homebrew/opt/openexr/include")
+set(OpenEXR_LIBRARIES 
+    "/opt/homebrew/opt/openexr/lib/libOpenEXR.dylib"
+    "/opt/homebrew/opt/openexr/lib/libOpenEXRUtil.dylib"
+    "/opt/homebrew/opt/openexr/lib/libOpenEXRCore.dylib"
+    "/opt/homebrew/opt/openexr/lib/libIlmThread.dylib"
+    "/opt/homebrew/opt/openexr/lib/libIex.dylib"
+    "/opt/homebrew/opt/openexr/lib/libImath.dylib"
+)
+link_directories("/opt/homebrew/lib" "/opt/homebrew/opt/openexr/lib")
+
 
 find_package(PNG REQUIRED)
 include_directories(SYSTEM ${PNG_INCLUDE_DIRS})

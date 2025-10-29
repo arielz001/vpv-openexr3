@@ -2748,83 +2748,92 @@ static int read_beheaded_bmp(struct iio_image *x,
 
 // EXR reader                                                               {{{2
 
-#ifdef I_CAN_HAS_LIBEXR
-#include <OpenEXR/ImfCRgbaFile.h>
-// EXTERNALIZED TO :  read_exr_float.cpp
 
-static int read_whole_exr(struct iio_image *x, const char *filename)
-{
-	struct ImfInputFile *f = ImfOpenInputFile(filename);
-	if (!f) fail("could not read exr from %s", filename);
-	int r;
+#include "iio.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-	const char *nom = ImfInputFileName(f);
-	IIO_DEBUG("ImfInputFileName returned %s\n", nom);
+// #ifdef I_CAN_HAS_LIBEXR
+// #include <OpenEXR/ImfCRgbaFile.h>
+// // EXTERNALIZED TO :  read_exr_float.cpp
 
-	r = ImfInputChannels(f);
-	IIO_DEBUG("ImfInputChannels returned %d\n", r);
+// static int read_whole_exr(struct iio_image *x, const char *filename)
+// {
+// 	struct ImfInputFile *f = ImfOpenInputFile(filename);
+// 	if (!f) fail("could not read exr from %s", filename);
+// 	int r;
 
-	const struct ImfHeader *header = ImfInputHeader(f);
-	int xmin, ymin, xmax, ymax;
-	ImfHeaderDataWindow(header, &xmin, &ymin, &xmax, &ymax);
-	IIO_DEBUG("xmin ymin xmax ymax = %d %d %d %d\n", xmin,ymin,xmax,ymax);
+// 	const char *nom = ImfInputFileName(f);
+// 	IIO_DEBUG("ImfInputFileName returned %s\n", nom);
 
-	int width = xmax - xmin + 1;
-	int height = ymax - ymin + 1;
-	struct ImfRgba *data = xmalloc(width*height*sizeof*data);
+// 	r = ImfInputChannels(f);
+// 	IIO_DEBUG("ImfInputChannels returned %d\n", r);
 
-	r = ImfInputSetFrameBuffer(f, data, 1, width);
-	IIO_DEBUG("ImfInputSetFrameBuffer returned %d\n", r);
+// 	const struct ImfHeader *header = ImfInputHeader(f);
+// 	int xmin, ymin, xmax, ymax;
+// 	ImfHeaderDataWindow(header, &xmin, &ymin, &xmax, &ymax);
+// 	IIO_DEBUG("xmin ymin xmax ymax = %d %d %d %d\n", xmin,ymin,xmax,ymax);
 
-	r = ImfInputReadPixels(f, ymin, ymax);
-	IIO_DEBUG("ImfInputReadPixels returned %d\n", r);
+// 	int width = xmax - xmin + 1;
+// 	int height = ymax - ymin + 1;
+// 	struct ImfRgba *data = xmalloc(width*height*sizeof*data);
 
-	r = ImfCloseInputFile(f);
-	IIO_DEBUG("ImfCloseInputFile returned %d\n", r);
+// 	r = ImfInputSetFrameBuffer(f, data, 1, width);
+// 	IIO_DEBUG("ImfInputSetFrameBuffer returned %d\n", r);
 
-	float *finaldata = xmalloc(4*width*height*sizeof*data);
-	FORI(width*height) {
-		finaldata[4*i+0] = ImfHalfToFloat(data[i].r);
-		finaldata[4*i+1] = ImfHalfToFloat(data[i].g);
-		finaldata[4*i+2] = ImfHalfToFloat(data[i].b);
-		finaldata[4*i+3] = ImfHalfToFloat(data[i].a);
-	}
-	xfree(data);
+// 	r = ImfInputReadPixels(f, ymin, ymax);
+// 	IIO_DEBUG("ImfInputReadPixels returned %d\n", r);
 
-	// fill struct fields
-	iio_image_init2d(x, w, h, 4, IIO_TYPE_FLOAT);
-	x->data = finaldata;
-	return 0;
-}
+// 	r = ImfCloseInputFile(f);
+// 	IIO_DEBUG("ImfCloseInputFile returned %d\n", r);
 
-// Note: OpenEXR library only reads from a named file.  The only way to use the
-// library if you have your image in a stream, is to write the data to a
-// temporary file, and read it from there.  This can be optimized in the future
-// by recovering the original filename through hacks, in case it was not a pipe.
-static int read_beheaded_exr(struct iio_image *x,
-		FILE *fin, char *header, int nheader)
-{
-	if (global_variable_containing_the_name_of_the_last_opened_file) {
-		int r = read_whole_exr(x,
-		global_variable_containing_the_name_of_the_last_opened_file);
-		if (r) fail("read whole tiff returned %d", r);
-		return 0;
-	}
+// 	float *finaldata = xmalloc(4*width*height*sizeof*data);
+// 	FORI(width*height) {
+// 		finaldata[4*i+0] = ImfHalfToFloat(data[i].r);
+// 		finaldata[4*i+1] = ImfHalfToFloat(data[i].g);
+// 		finaldata[4*i+2] = ImfHalfToFloat(data[i].b);
+// 		finaldata[4*i+3] = ImfHalfToFloat(data[i].a);
+// 	}
+// 	xfree(data);
 
-	long filesize;
-	void *filedata = load_rest_of_file(&filesize, fin, header, nheader);
-	char *filename = put_data_into_temporary_file(filedata, filesize);
-	xfree(filedata);
+// 	// fill struct fields
+// 	// iio_image_init2d(x, w, h, 4, IIO_TYPE_FLOAT);
+// 	int w = x->sizes[0];
+// 	int h = x->sizes[1];
+// 	iio_image_init2d(x, w, h, 4, IIO_TYPE_FLOAT);
 
-	int r = read_whole_exr(x, filename);
-	if (r) fail("read whole exr returned %d", r);
+// 	x->data = finaldata;
+// 	return 0;
+// }
 
-	delete_temporary_file(filename);
+// // Note: OpenEXR library only reads from a named file.  The only way to use the
+// // library if you have your image in a stream, is to write the data to a
+// // temporary file, and read it from there.  This can be optimized in the future
+// // by recovering the original filename through hacks, in case it was not a pipe.
+// static int read_beheaded_exr(struct iio_image *x,
+// 		FILE *fin, char *header, int nheader)
+// {
+// 	if (global_variable_containing_the_name_of_the_last_opened_file) {
+// 		int r = read_whole_exr(x,
+// 		global_variable_containing_the_name_of_the_last_opened_file);
+// 		if (r) fail("read whole tiff returned %d", r);
+// 		return 0;
+// 	}
 
-	return 0;
-}
+// 	long filesize;
+// 	void *filedata = load_rest_of_file(&filesize, fin, header, nheader);
+// 	char *filename = put_data_into_temporary_file(filedata, filesize);
+// 	xfree(filedata);
 
-#endif//I_CAN_HAS_LIBEXR
+// 	int r = read_whole_exr(x, filename);
+// 	if (r) fail("read whole exr returned %d", r);
+
+// 	delete_temporary_file(filename);
+
+// 	return 0;
+// }
+
+// #endif//I_CAN_HAS_LIBEXR
 
 
 
@@ -5181,9 +5190,9 @@ int read_beheaded_image(struct iio_image *x, FILE *f, char *h, int hn, int fmt)
 	case IIO_FORMAT_TIFF:  return read_beheaded_tiff(x, f, h, hn);
 #endif
 
-#ifdef I_CAN_HAS_LIBEXR
-	case IIO_FORMAT_EXR:   return read_beheaded_exr (x, f, h, hn);
-#endif
+// #ifdef I_CAN_HAS_LIBEXR
+// 	case IIO_FORMAT_EXR:   return read_beheaded_exr (x, f, h, hn);
+// #endif
 
 #ifdef I_CAN_HAS_LIBHDF5
 	case IIO_FORMAT_HDF5:   return read_beheaded_hdf5 (x, f, h, hn);
@@ -6243,9 +6252,13 @@ void iio_write_image_uint16_vec(char *filename, uint16_t *data,
 	iio_write_image_default(filename, x);
 }
 
-void iio_free(char *p)
+// void iio_free(char *p)
+// {
+// 	xfree(p);
+// }
+void iio_free(void *p)
 {
-	xfree(p);
+    free(p);
 }
 
 // API (deprecated)                                                         {{{1
